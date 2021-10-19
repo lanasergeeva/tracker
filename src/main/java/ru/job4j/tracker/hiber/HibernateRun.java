@@ -8,11 +8,11 @@ import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import ru.job4j.tracker.model.Item;
 
 import java.sql.Timestamp;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
 public class HibernateRun {
+
     public static void main(String[] args) {
         final StandardServiceRegistry registry = new StandardServiceRegistryBuilder()
                 .configure().build();
