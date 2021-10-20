@@ -32,6 +32,12 @@ public class Item {
         this.name = name;
     }
 
+    public Item(int id, String name, String description) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+    }
+
     public Item(String name, String description, Timestamp created) {
         this.name = name;
         this.description = description;
