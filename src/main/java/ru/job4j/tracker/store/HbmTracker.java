@@ -75,7 +75,8 @@ public class HbmTracker implements Store, AutoCloseable {
         Session session = sf.openSession();
         Transaction tx = session.beginTransaction();
         try {
-            return session.createQuery("from ru.job4j.tracker.model.Item as item where item.name=:name").
+            return session
+                    .createQuery("from ru.job4j.tracker.model.Item as item where item.name=:name").
             setParameter("name", name).list();
         } finally {
             tx.commit();
@@ -94,7 +95,6 @@ public class HbmTracker implements Store, AutoCloseable {
             session.close();
         }
     }
-
 
     @Override
     public void close() {
