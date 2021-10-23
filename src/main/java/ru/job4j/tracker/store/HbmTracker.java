@@ -9,6 +9,7 @@ import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import ru.job4j.tracker.interfaces.Store;
 import ru.job4j.tracker.model.Item;
 
+import javax.persistence.Query;
 import java.util.List;
 
 public class HbmTracker implements Store, AutoCloseable {
@@ -33,16 +34,22 @@ public class HbmTracker implements Store, AutoCloseable {
 
     @Override
     public boolean replace(int id, Item item) {
-        boolean rsl = false;
         Session session = sf.openSession();
         Transaction tx = session.beginTransaction();
-        if (session.contains(item.getName())) {
-            session.update(item);
+        String hql = "update ru.job4j.tracker.model.Item "
+                + "SET name = :name "
+                + ", description  = :description"
+                + " where id = :idParam";
+        try {
+            Query query = session.createQuery(hql);
+            query.setParameter("idParam", id);
+            query.setParameter("name", item.getName());
+            query.setParameter("description", item.getDescription());
+            return query.executeUpdate() > 0;
+        } finally {
             tx.commit();
-            rsl = true;
+            session.close();
         }
-        session.close();
-        return rsl;
     }
 
     @Override
@@ -50,12 +57,15 @@ public class HbmTracker implements Store, AutoCloseable {
         Session session = sf.openSession();
         Transaction tx = session.beginTransaction();
         try {
-            session.delete(new Item(id, null, null, null));
+            return session
+                    .createQuery("delete from ru.job4j.tracker.model.Item "
+                            + "as item where item.id=:id").
+                            setParameter("id", id)
+                    .executeUpdate() > 0;
         } finally {
             tx.commit();
             session.close();
         }
-        return true;
     }
 
     @Override
@@ -77,7 +87,7 @@ public class HbmTracker implements Store, AutoCloseable {
         try {
             return session
                     .createQuery("from ru.job4j.tracker.model.Item as item where item.name=:name").
-            setParameter("name", name).list();
+                            setParameter("name", name).list();
         } finally {
             tx.commit();
             session.close();

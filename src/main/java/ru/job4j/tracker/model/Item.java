@@ -51,6 +51,14 @@ public class Item {
         this.created = created;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
+    public Timestamp getCreated() {
+        return created;
+    }
+
     public int getId() {
         return id;
     }
