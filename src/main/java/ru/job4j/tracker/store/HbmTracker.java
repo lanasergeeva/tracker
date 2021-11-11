@@ -9,8 +9,8 @@ import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import ru.job4j.tracker.interfaces.Store;
 import ru.job4j.tracker.model.Item;
 
-import javax.persistence.Query;
 import java.util.List;
+import java.util.function.Function;
 
 public class HbmTracker implements Store, AutoCloseable {
 
@@ -21,94 +21,65 @@ public class HbmTracker implements Store, AutoCloseable {
 
     @Override
     public Item add(Item item) {
-        Session session = sf.openSession();
-        Transaction tx = session.beginTransaction();
-        try {
-            session.save(item);
-            return item;
-        } finally {
-            tx.commit();
-            session.close();
-        }
+        tx(session -> session.save(item));
+        return item;
     }
 
     @Override
     public boolean replace(int id, Item item) {
-        Session session = sf.openSession();
-        Transaction tx = session.beginTransaction();
-        String hql = "update ru.job4j.tracker.model.Item "
-                + "SET name = :name "
-                + ", description  = :description"
-                + " where id = :idParam";
-        try {
-            Query query = session.createQuery(hql);
-            query.setParameter("idParam", id);
-            query.setParameter("name", item.getName());
-            query.setParameter("description", item.getDescription());
-            return query.executeUpdate() > 0;
-        } finally {
-            tx.commit();
-            session.close();
-        }
+        item.setId(id);
+        return tx(session -> {
+            session.update(item);
+            return true;
+        });
     }
 
     @Override
     public boolean delete(int id) {
-        Session session = sf.openSession();
-        Transaction tx = session.beginTransaction();
-        try {
-            return session
-                    .createQuery("delete from ru.job4j.tracker.model.Item "
-                            + "as item where item.id=:id").
-                            setParameter("id", id)
-                    .executeUpdate() > 0;
-        } finally {
-            tx.commit();
-            session.close();
-        }
+        return tx(session ->
+                session.createQuery("delete from ru.job4j.tracker.model.Item "
+                        + "as item where item.id=:id").
+                        setParameter("id", id)
+                        .executeUpdate() > 0);
     }
+
 
     @Override
     public List<Item> findAll() {
-        Session session = sf.openSession();
-        Transaction tx = session.beginTransaction();
-        try {
-            return session.createQuery("from ru.job4j.tracker.model.Item").list();
-        } finally {
-            tx.commit();
-            session.close();
-        }
+        return tx(session -> session.createQuery("from ru.job4j.tracker.model.Item").list());
     }
 
     @Override
     public List<Item> findByName(String name) {
-        Session session = sf.openSession();
-        Transaction tx = session.beginTransaction();
-        try {
-            return session
-                    .createQuery("from ru.job4j.tracker.model.Item as item where item.name=:name").
-                            setParameter("name", name).list();
-        } finally {
-            tx.commit();
-            session.close();
-        }
+        return tx(
+                session -> session
+                        .createQuery("from ru.job4j.tracker.model.Item as item where item.name=:name").
+                                setParameter("name", name).list());
     }
 
     @Override
     public Item findById(int id) {
-        Session session = sf.openSession();
-        Transaction tx = session.beginTransaction();
-        try {
-            return session.get(Item.class, id);
-        } finally {
-            tx.commit();
-            session.close();
-        }
+        return tx(session -> session.get(Item.class, id));
     }
 
     @Override
     public void close() {
         StandardServiceRegistryBuilder.destroy(registry);
+    }
+
+    private <T> T tx(final Function<Session, T> command) {
+        final Session session = sf.openSession();
+        final Transaction tx = session.beginTransaction();
+        try {
+            T rsl = command.apply(session);
+            tx.commit();
+            return rsl;
+        } catch (final Exception e) {
+            session.getTransaction().rollback();
+            throw e;
+        } finally {
+            session.close();
+        }
     }
 
     @Override
