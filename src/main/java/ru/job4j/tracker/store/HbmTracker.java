@@ -43,7 +43,6 @@ public class HbmTracker implements Store, AutoCloseable {
                         .executeUpdate() > 0);
     }
 
-
     @Override
     public List<Item> findAll() {
         return tx(session -> session.createQuery("from ru.job4j.tracker.model.Item").list());
@@ -53,7 +52,8 @@ public class HbmTracker implements Store, AutoCloseable {
     public List<Item> findByName(String name) {
         return tx(
                 session -> session
-                        .createQuery("from ru.job4j.tracker.model.Item as item where item.name=:name").
+                        .createQuery(
+                                "from ru.job4j.tracker.model.Item as item where item.name=:name").
                                 setParameter("name", name).list());
     }
 
