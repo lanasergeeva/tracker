@@ -1,6 +1,9 @@
 package ru.job4j.tracker.store;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.job4j.tracker.interfaces.Store;
+import ru.job4j.tracker.interfaces.react.Observe;
 import ru.job4j.tracker.model.Item;
 
 import java.io.InputStream;
@@ -10,6 +13,9 @@ import java.util.List;
 import java.util.Properties;
 
 public class SqlTracker implements Store {
+
+    public static final Logger LOGGER = LoggerFactory.getLogger(SqlTracker.class.getSimpleName());
+
     private Connection cn;
 
     public SqlTracker() {
@@ -37,7 +43,7 @@ public class SqlTracker implements Store {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() throws SQLException {
         if (cn != null) {
             cn.close();
         }
@@ -56,7 +62,7 @@ public class SqlTracker implements Store {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error("Exception in add", e);
         }
         return item;
     }
@@ -70,7 +76,7 @@ public class SqlTracker implements Store {
             statement.setInt(2, id);
             result = statement.executeUpdate() > 0;
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error("Exception in replace", e);
         }
         return result;
     }
@@ -83,7 +89,7 @@ public class SqlTracker implements Store {
             statement.setInt(1, id);
             result = statement.executeUpdate() > 0;
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error("Exception in delete", e);
         }
         return result;
     }
@@ -91,7 +97,8 @@ public class SqlTracker implements Store {
     @Override
     public List<Item> findAll() {
         List<Item> itemList = new ArrayList<>();
-        try (PreparedStatement statement = cn.prepareStatement("select * from items")) {
+        try (PreparedStatement statement =
+                     cn.prepareStatement("select * from items order by id asc")) {
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
                     itemList.add(new Item(
@@ -101,9 +108,23 @@ public class SqlTracker implements Store {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error("Exception in delete", e);
         }
         return itemList;
+    }
+
+    @Override
+    public void getByReact(Observe<Item> observe) {
+        try (PreparedStatement statement =
+                     cn.prepareStatement("select * from items order by id asc")) {
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    observe.receive(getFromResultSet(resultSet));
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.error("Exception in getByReact", e);
+        }
     }
 
     @Override
@@ -121,7 +142,7 @@ public class SqlTracker implements Store {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error("Exception in findByName", e);
         }
         return itemList;
     }
@@ -141,8 +162,20 @@ public class SqlTracker implements Store {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error("Exception in findById", e);
         }
         return rsl;
+    }
+
+    private Item getFromResultSet(ResultSet resultSet) throws SQLException {
+        return new Item(
+                resultSet.getInt("id"),
+                resultSet.getString("name"));
+    }
+
+    public static void main(String[] args) {
+        SqlTracker sqlTracker = new SqlTracker();
+        sqlTracker.init();
+        System.out.println(sqlTracker.findAll());
     }
 }

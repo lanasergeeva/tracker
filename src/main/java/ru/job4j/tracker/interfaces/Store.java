@@ -1,5 +1,6 @@
 package ru.job4j.tracker.interfaces;
 
+import ru.job4j.tracker.interfaces.react.Observe;
 import ru.job4j.tracker.model.Item;
 
 import java.util.List;
@@ -18,4 +19,6 @@ public interface Store extends AutoCloseable {
     List<Item> findByName(String key);
 
     Item findById(int id);
+
+    void getByReact(Observe<Item> observe);
 }

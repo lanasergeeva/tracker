@@ -1,12 +1,13 @@
 package ru.job4j.tracker.store;
 
+import ru.job4j.tracker.interfaces.react.Observe;
 import ru.job4j.tracker.model.Item;
 import ru.job4j.tracker.interfaces.Store;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public  class MemTracker implements Store {
+public class MemTracker implements Store {
 
     private final List<Item> items = new ArrayList<>();
     private int ids = 1;
@@ -17,17 +18,20 @@ public  class MemTracker implements Store {
 
     }
 
+    @Override
     public Item add(Item item) {
         item.setId(ids++);
         items.add(size++, item);
         return item;
     }
 
+    @Override
     public Item findById(int id) {
         int index = indexOf(id);
         return index != -1 ? items.get(index) : null;
     }
 
+    @Override
     public List<Item> findByName(String key) {
         List<Item> itemName = new ArrayList<>();
         for (Item names : items) {
@@ -38,6 +42,7 @@ public  class MemTracker implements Store {
         return itemName;
     }
 
+    @Override
     public List<Item> findAll() {
         return items;
     }
@@ -53,6 +58,7 @@ public  class MemTracker implements Store {
         return rsl;
     }
 
+    @Override
     public boolean replace(int id, Item item) {
         int index = indexOf(id);
         boolean rsl = index != -1;
@@ -63,6 +69,7 @@ public  class MemTracker implements Store {
         return rsl;
     }
 
+    @Override
     public boolean delete(int id) {
         int index = indexOf(id);
         boolean rsl = index != -1;
@@ -71,6 +78,16 @@ public  class MemTracker implements Store {
             size--;
         }
         return rsl;
+    }
+
+    @Override
+    public void getByReact(Observe<Item> observe) {
+        List<Item> all = findAll();
+        if (all.size() > 0) {
+            for (Item item : all) {
+                observe.receive(item);
+            }
+        }
     }
 
     @Override

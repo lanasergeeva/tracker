@@ -5,6 +5,7 @@ import ru.job4j.tracker.interfaces.Input;
 import ru.job4j.tracker.interfaces.Output;
 import ru.job4j.tracker.interfaces.Store;
 import ru.job4j.tracker.interfaces.UserAction;
+import ru.job4j.tracker.store.MemTracker;
 import ru.job4j.tracker.store.SqlTracker;
 
 import java.util.ArrayList;
@@ -39,6 +40,11 @@ public class StartUI {
         }
     }
 
+    /**
+     * Для тестировки gc -Xlog:gc* -XX:+UseSerialGC
+     *
+     * @param args аргументы
+     */
     public static void main(String[] args) {
         Output output = new ConsoleOutput();
         Input input = new ValidateInput(output, new ConsoleInput());
@@ -49,7 +55,11 @@ public class StartUI {
         actions.add(new DeleteAction(output));
         actions.add(new FindByIdAction(output));
         actions.add(new FindByNameAction(output));
+        actions.add(new ManyItemsActions(output));
+        actions.add(new DeleteManyItems(output));
         actions.add(new ExitAction(output));
+     /*   MemTracker tracker = new MemTracker();
+        new StartUI(output).init(input, tracker, actions);*/
         try (Store tracker = new SqlTracker()) {
             tracker.init();
             new StartUI(output).init(input, tracker, actions);
